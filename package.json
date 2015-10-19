@@ -1,0 +1,42 @@
+{
+  "name": "ls",
+  "version": "0.0.1",
+  "description": "Solar Dashboard for Outback Power system",
+  "main": "app.js",
+  "dependencies": {
+    "async": "^1.4.2",
+    "express": "^4.13.3",
+    "jsdom": "^6.5.0",
+    "fs": "^0.0.2",
+    "mssql": "^2.2.0",
+    "needle": "^0.10.0",
+    "grunt": "^0.4.5",
+    "grunt-concurrent": "^2.0.3",
+    "milight": "^0.1.0",
+    "grunt-nodemon": "^0.4.0",
+    "node-quickbooks": "^1.0.19",
+    "sqlite3": "^3.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/weavver/solardashboard.git"
+  },
+  "keywords": [
+    "solar",
+    "outback",
+    "power",
+    "dashboard",
+    "graphs",
+    "watts"
+  ],
+  "author": "Mitchel Constantin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/weavver/solardashboard/issues"
+  },
+  "homepage": "https://github.com/weavver/solardashboard#readme"
+}
