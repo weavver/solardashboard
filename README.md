@@ -13,7 +13,7 @@ Pros over Optics RE:
 2. Designed using bootstrap - looks great on your mobile phone (tested with an iPhone 6S)  
 
 I designed this to work with my system:  
-Outback VFX3648  
+Outback VFXR3648A  
 Outback Mate3  
 Outback Legacy 10-Hub  
 Outback MX60 Charge Controller  
