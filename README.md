@@ -8,15 +8,15 @@ Company Website: www.weavver.com
 
 The solar dashboard works only with Outback solar equipment right now. Namely the Outback Mate 3.
 
-Pros over Optics RE:
-1. Works with older MX60 without a firmware update -- See your solar pv watt curve without taking your system out of service and sending the charge controller in for repair.
-2. Designed using bootstrap - looks great on your mobile phone (tested with an iPhone 6S)
+Pros over Optics RE:  
+1. Works with older MX60 without a firmware update -- See your solar pv watt curve without taking your system out of service and sending the charge controller in for repair.  
+2. Designed using bootstrap - looks great on your mobile phone (tested with an iPhone 6S)  
 
-I designed this to work with my system:
-Outback VFX3648
-Outback Mate3
-Outback Legacy 10-Hub
-Outback MX60 Charge Controller
+I designed this to work with my system:  
+Outback VFX3648  
+Outback Mate3  
+Outback Legacy 10-Hub  
+Outback MX60 Charge Controller  
 
 You will likely have to adjust some of the code to work with your system. With only a few minor code changes this dashboard will work with your system.
 
