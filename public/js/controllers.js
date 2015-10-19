@@ -11,7 +11,8 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
      $scope.updateData = function () {
           $http.get('/data').then(function (response) {
                //console.log(response);
-               $scope.financial = response.data.financial;
+
+               $scope.data = response.data;
 
                $scope.outback_data = response.data.outback_data.devstatus;
                $scope.voltage = $scope.outback_data.Sys_Batt_V;
