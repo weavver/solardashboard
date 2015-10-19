@@ -1,9 +1,9 @@
 Weavver Solar Dashboard
 ========
 License: MIT  
-Status: Alpha
-Author: Mitchel Constantin <mythicalbox@weavver.com>
-Company: Weavver, Inc.
+Status: Alpha  
+Author: Mitchel Constantin <mythicalbox@weavver.com>  
+Company: Weavver, Inc.  
 Company Website: www.weavver.com  
 
 The solar dashboard works only with Outback solar equipment right now. Namely the Outback Mate 3.
