@@ -178,7 +178,7 @@ function logData() {
                }
 
                global.result.outback_data.inv_in = inv.Chg_I_L2 * inv.VAC1_in_L2;
-               global.result.outback_data.inv_out = 0;
+               global.result.outback_data.inv_out = consumption_watts;
 
                LogDataPoint('outback_gen_charge_watts', global.result.outback_data.inv_in);
                LogDataPoint('outback_sys_batt_v', response.body.devstatus.Sys_Batt_V);
