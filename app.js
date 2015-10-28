@@ -144,8 +144,10 @@ function getHistory(callback, sensorId) {
      var connection = new global.sql.Connection(global.config, function (err) {
           var request = new global.sql.Request(connection);
           request.query(dataHistorySql, function (err, recordset) {
-               if (err)
-                    console.log(err);
+               if (err) {
+                   console.log('query error');
+                   console.log(err);
+               }
 
                if (recordset && recordset.length > 0)
                     callback(null, recordset);
@@ -165,21 +167,30 @@ function logData() {
           if (response.body && response.body.devstatus && response.body.devstatus.ports && response.body.devstatus.ports.length > 2) {
                global.result.outback_data = response.body;
 
-               var inv = response.body.devstatus.ports[0];
-               //var consumption_watts = (inv.Inv_I * inv.VAC_out) + ((inv.Buy_I * inv.VAC_out) - (inv.Chg_I * inv.VAC_in));
-               var consumption_watts = (inv.Inv_I_L2 * inv.VAC_out_L2) + ((inv.Buy_I_L2 * inv.VAC_out_L2) - (inv.Chg_I_L2 * inv.VAC1_in_L2));
-               LogDataPoint('outback_watts', consumption_watts);
+              var charge_watts = null;
+              var consumption_watts = null;
+               response.body.devstatus.ports.forEach(function (device, key, array) {
+                   if (device.Dev == 'FXR') {
+                       var inv = device;
+                       consumption_watts += (inv.Inv_I_L2 * inv.VAC_out_L2) + ((inv.Buy_I_L2 * inv.VAC_out_L2) - (inv.Chg_I_L2 * inv.VAC1_in_L2));
+                       charge_watts += inv.Chg_I_L2 * inv.VAC1_in_L2;
+                   }
+                   if (device.Dev == 'CC')
+                   {
+                       var cc = device;
+                       if (typeof cc !== 'undefined' && typeof cc.Out_I !== 'undefined' && typeof cc.Batt_V !== 'undefined') {
+                           var a = cc.Out_I * cc.Batt_V;
+                           global.result.outback_data.pv_in = Math.round(a / 10) * 10;
+                       }
+                   }
+               });
 
-               var cc = response.body.devstatus.ports[1];
-               if (typeof cc !== 'undefined' && typeof cc.Out_I !== 'undefined' && typeof cc.Batt_V !== 'undefined') {
-                    var a = cc.Out_I * cc.Batt_V;
-                    global.result.outback_data.pv_in = Math.round(a / 10) * 10;
-                    LogDataPoint('outback_pv_watts', global.result.outback_data.pv_in);
-               }
+              LogDataPoint('outback_pv_watts', global.result.outback_data.pv_in);
 
-               global.result.outback_data.inv_in = inv.Chg_I_L2 * inv.VAC1_in_L2;
+               global.result.outback_data.inv_in = charge_watts;
                global.result.outback_data.inv_out = consumption_watts;
 
+               LogDataPoint('outback_watts', consumption_watts);
                LogDataPoint('outback_gen_charge_watts', global.result.outback_data.inv_in);
                LogDataPoint('outback_sys_batt_v', response.body.devstatus.Sys_Batt_V);
                LogDataPoint('outback_sys_soc', response.body.devstatus.ports[2].SOC);

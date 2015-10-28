@@ -5,6 +5,7 @@
      <meta name="viewport" content="width=device-width, initial-scale=1">
      <title>My Dashboard</title>
      <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css">
+     <link rel="stylesheet" href="/bower_components/angular-bootstrap/ui-bootstrap-csp.css">
      <script src="/bower_components/jquery/dist/jquery.min.js"></script>
      <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
      <script src="/js/d3.min.js"></script>
@@ -90,6 +91,9 @@
                <div class="col-xs-1 col-md-1"><span id="pv_in"></span></div>
                <div class="col-xs-1 col-md-1"><span id="inv_in"></span></div>
           </div>
+<div class="row-fluid" style="margin-top: 20px;">
+      <input type="date" class="form-control" uib-datepicker-popup ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+</div>
      </div>
      <div class="wrapper container-fluid">
           <div class="row-fluid" style="margin-top: 15px;">
@@ -103,6 +107,7 @@
           </div>
      </div>
      <script src="/bower_components/angular/angular.js"></script>
+     <script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
      <script src="/js/controllers.js"></script>
      #extra_scripts#
 </body>

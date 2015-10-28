@@ -197,6 +197,9 @@
     }
     
     this.redraw = function (value, units, transitionDuration) {
+	if (typeof value === 'undefined')
+		return;
+
         var pointerContainer = this.body.select(".pointerContainer");
         
         pointerContainer.selectAll("text").text(value + units);
