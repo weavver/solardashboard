@@ -20,6 +20,14 @@ global.express = require('express');
 global.app = global.express();
 global.needle = require('needle');
 global.jsdom = require("jsdom");
+global.nedbDatastore = require('nedb');
+global.nedbDatastore = require('nedb');
+global.path = require('path');
+global.dbpath = global.path.join('/tmp/', 'mydashboard.db');
+
+console.log(global.dbpath);
+global.nedb = new global.nedbDatastore({ filename: global.dbpath, autoload: true });
+
 
 global.express.static.mime.define({ 'text/css': ['css'] });
 
@@ -54,60 +62,42 @@ global.app.set('view engine', 'tpl'); // register the template engine
 
 global.app.get('/', function (req, res) {
      res.render('index', global.tpl_data);
-})
+});
 
-// respond with "Hello World!" on the homepage
 global.app.get('/data', function (req, res) {
-    global.async.parallel([
-        function (callback) {
-             getHistory(callback, 'outback_watts');
-        },
-         function (callback) {
-              getHistory(callback, 'outback_sys_batt_v');
-         },
-         function (callback) {
-              getHistory(callback, 'outback_gen_charge_watts');
-         },
-         function (callback) {
-              getHistory(callback, 'outback_pv_watts');
-         },
-         function (callback) {
-              getHistory(callback, 'outback_sys_soc');
-         }],
-        function (err, results) {
-            if (err) {
-		     console.log(err);
-		     res.send({'status': 'fail', 'err': err});
-            }
-            global.result.data_watts = results[0];
-            global.result.data_voltage = results[1];
-            global.result.data_generator = results[2];
-            global.result.data_solar = results[3];
-            global.result.data_soc = results[4];
-            res.send(global.result);
-        });
+     res.send(global.result);
 });
 
 function LogDataPoint(sensorId, val) {
      if (!val)
           return;
 
+     var doc = { sensorId: sensorId, val: val, date: new Date().toISOString() };
+     global.nedb.insert(doc, function (err, newDoc) {
+          // newDoc is the newly inserted document, including its _id
+     });
+}
+
+var pushMessagesQueue = global.async.queue(function (task, callback) {
+     console.log(task);
      var connection = new global.sql.Connection(global.config, function (err) {
+          console.log(err);
           var request = new global.sql.Request(connection); // or: var request = connection.request();
           request.input('orgId', global.sql.VarChar, global.config.orgId);
-          request.input('sensorId', global.sql.VarChar, sensorId);
-          request.input('val', global.sql.VarChar, val);
+          request.input('sensorId', global.sql.VarChar, task.sensorId);
+          request.input('val', global.sql.VarChar, task.val);
+          request.input('recordedAt', global.sql.VarChar, task.date);
 
-		var sql2 = "BEGIN \
-		  	--	   IF NOT EXISTS (SELECT top 1 * FROM Sensors_Data where RecordedAt > DateADD(s, -1, GETUTCDATE()) and SensorId=@sensorId) \
-			--	   BEGIN \
-				       	insert into Sensors_Data (id, organizationid, sensorid, value, recordedat) values(newid(), @orgId, @sensorId, @val, GETUTCDATE()) \
-					select 'inserted' \
-			--	   END \
-		   	    END";
+          var sql2 = "BEGIN \
+               --	   IF NOT EXISTS (SELECT top 1 * FROM Sensors_Data where RecordedAt > DateADD(s, -1, GETUTCDATE()) and SensorId=@sensorId) \
+               --	   BEGIN \
+                              insert into Sensors_Data (id, organizationid, sensorid, value, recordedat) values(newid(), @orgId, @sensorId, @val, GETUTCDATE()) \
+                         select 'inserted' \
+               --	   END \
+                   END";
 
           sql2 = "BEGIN \
-                    insert into Sensors_Data (id, organizationid, sensorid, value, recordedat) values(newid(), @orgId, @sensorId, @val, GETUTCDATE()) \
+                    insert into Sensors_Data (id, organizationid, sensorid, value, recordedat) values(newid(), @orgId, @sensorId, @val, @recordedAt) \
                     select 'inserted' \
                END";
 
@@ -116,12 +106,30 @@ function LogDataPoint(sensorId, val) {
                     console.log(err);
                } else if (recordset && recordset.length > 0) {
                     // console.log('Recorded sensor ' + sensorId + ' value ' + val);
+                    //console.log('message pushed');
+                    //console.log(element);
+                    global.nedb.remove({_id: task._id});
                }
+               connection.close();
+               callback();
+          });          
+     });
+}, 1);
+
+pushMessagesQueue.drain = function() {
+     setTimeout(pushMessages, 60000);
+}
+
+function pushMessages() {
+     global.nedb.find({}, function (err, docs) {
+          docs.forEach(function (element, index, array) {
+               pushMessagesQueue.push(element);
           });
      });
 }
 
-function getHistory(callback, sensorId) {
+function getHistory(sensorId, callback) {
+     console.log('loading history for sensor: ' + sensorId);
      var dataHistorySql = "select convert(varchar, datepart(year, recordedat)) + '-' + \
                convert(varchar, datepart(month, recordedat)) + '-' + \
                convert(varchar, datepart(day, recordedat)) + ' ' + \
@@ -142,19 +150,40 @@ function getHistory(callback, sensorId) {
                datepart(minute, recordedat) \
                order by year, month, day, hour, minute";
      var connection = new global.sql.Connection(global.config, function (err) {
+          console.log(err);
           var request = new global.sql.Request(connection);
           request.query(dataHistorySql, function (err, recordset) {
+
                if (err) {
-                   console.log('query error');
+                   console.log('query error on sensor: ' + sensorId);
                    console.log(err);
                }
 
-               if (recordset && recordset.length > 0)
-                    callback(null, recordset);
-               else
-                    callback(null, recordset);
+               if (recordset && recordset.length > 0) {
+                    global.result[sensorId] = recordset;
+                    
+                    }
+               //else
+                    //callback(null, recordset);
+                    
+               callback();
+               
+               connection.close();
           });
      });
+}
+
+var q = global.async.queue(function (task, callback) {
+     getHistory(task.sensorId, callback);
+}, 1);
+
+
+function loadHistory() {
+     q.push({sensorId: 'outback_watts'});
+     q.push({sensorId: 'outback_sys_batt_v'});
+     q.push({sensorId: 'outback_gen_charge_watts'});
+     q.push({sensorId: 'outback_pv_watts'});
+     q.push({sensorId: 'outback_sys_soc'});
 }
 
 function logData() {
@@ -185,7 +214,7 @@ function logData() {
                    }
                });
 
-              LogDataPoint('outback_pv_watts', global.result.outback_data.pv_in);
+               LogDataPoint('outback_pv_watts', global.result.outback_data.pv_in);
 
                global.result.outback_data.inv_in = charge_watts;
                global.result.outback_data.inv_out = consumption_watts;
@@ -201,6 +230,10 @@ function logData() {
 }
 
 setInterval(logData, 1000);
+
+setInterval(loadHistory, 20000);
+loadHistory();
+setTimeout(pushMessages, 5000);
 
 if (fs.existsSync('./extras/index.js')) {
      $extra = require('./extras/index.js');

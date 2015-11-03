@@ -75,7 +75,7 @@
 
           .chart {
                width: 100%;
-               height: 200px;
+               height: 150px;
                margin-bottom: 25px;
           }
      </style>
@@ -91,13 +91,13 @@
                <div class="col-xs-1 col-md-1"><span id="pv_in"></span></div>
                <div class="col-xs-1 col-md-1"><span id="inv_in"></span></div>
           </div>
-<div class="row-fluid" style="margin-top: 20px;">
-      <input type="date" class="form-control" uib-datepicker-popup ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
-</div>
      </div>
      <div class="wrapper container-fluid">
           <div class="row-fluid" style="margin-top: 15px;">
                <div id="graphColumn" class="col-md-12" style="margin-bottom: 25px;">
+                    <div fluid" style="margin-bottom: 20px;">
+                         <input type="date" class="form-control" uib-datepicker-popup ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+                    </div>
                     <div id="watts_chart" class="chart"></div>
                     <div id="voltage_chart" class="chart"></div>
                     <div id="generator_chart" class="chart"></div>

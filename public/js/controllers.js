@@ -18,15 +18,18 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
             gauges['pv_in'].redraw($scope.data.outback_data.pv_in, "w");
             gauges['inv_in'].redraw($scope.data.outback_data.inv_in, "w");
 
-            drawChart('watts_chart', 'Solar System - Watts', 'Watts', response.data.data_watts);
-            drawChart('voltage_chart', 'Solar System - Voltage', 'Voltage', response.data.data_voltage);
-            drawChart('generator_chart', 'Solar System - Generator Charge', 'Watts', response.data.data_generator);
-            drawChart('solar_chart', 'Solar System - Solar', 'Watts', response.data.data_solar);
+            drawChart('watts_chart', 'Solar System - Watts', 'Watts', response.data.outback_watts);
+            drawChart('voltage_chart', 'Solar System - Voltage', 'Voltage', response.data.outback_sys_batt_v);
+            drawChart('generator_chart', 'Solar System - Generator Charge', 'Watts', response.data.outback_gen_charge_watts);
+            drawChart('solar_chart', 'Solar System - Solar', 'Watts', response.data.outback_pv_watts);
             drawChart('soc_chart', 'Solar System - SOC', '%', response.data.data_soc);
         });
     }
 
     function drawChart(chartId, title, label, data_history) {
+    if (!data_history)
+          return;
+          
         var data = new google.visualization.DataTable();
 
         var sampleData = [
