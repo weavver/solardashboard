@@ -6,7 +6,7 @@ Author: Mitchel Constantin <mythicalbox@weavver.com>
 Company: Weavver, Inc.  
 Company Website: www.weavver.com  
 
-The solar dashboard works only with Outback solar equipment right now. Namely the Outback Mate 3.
+The solar dashboard works only with Outback solar equipment right now. Namely the Outback Mate 3. I'd be happy to support your favorite solar equipment if you want to buy me some to play with. ;)  
 
 Pros over Optics RE:  
 1. Works with older MX60 without a firmware update -- See your solar pv watt curve without taking your system out of service and sending the charge controller in for repair.  
