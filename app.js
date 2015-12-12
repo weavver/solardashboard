@@ -22,10 +22,9 @@ global.needle = require('needle');
 global.jsdom = require("jsdom");
 global.nedbDatastore = require('nedb');
 global.path = require('path');
-global.dbpath = global.path.join('/tmp/', 'mydashboard.db');
 
-console.log('NEDB Path: ' + global.dbpath);
-global.nedb = new global.nedbDatastore({ filename: global.dbpath, autoload: true });
+console.log('NEDB Path: ' + global.config.nedb_path);
+global.nedb = new global.nedbDatastore({ filename: global.config.nedb_path, autoload: true });
 
 
 global.express.static.mime.define({ 'text/css': ['css'] });
@@ -169,7 +168,7 @@ function getHistory(sensorId, callback) {
           })
           .sort({ timestamp_unix: -1})
           .exec(function (err, docs) {
-               console.log('found ' + docs.length + ' matching docs');
+               //console.log('found ' + docs.length + ' matching docs');
 
                var reducedDocs = [];
                var count = 0;
@@ -218,7 +217,7 @@ function getHistory(sensorId, callback) {
                     lastItemMinute = itemMinute;
                });
 
-               console.log('reduced to ' + reducedDocs.length + ' documents');
+               //console.log('reduced to ' + reducedDocs.length + ' documents');
                global.result[sensorId] = reducedDocs;
                callback();
           });

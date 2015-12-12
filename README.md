@@ -10,46 +10,16 @@ The solar dashboard works only with Outback solar equipment right now. Namely th
 
 Pros over Optics RE:  
 1. Works with older MX60 without a firmware update -- See your solar pv watt curve without taking your system out of service and sending the charge controller in for repair.  
-2. Designed using bootstrap - looks great on your mobile phone (tested with an iPhone 6S)  
+2. Designed using bootstrap - looks great on your mobile phone (tested with an iPhone 6S Plus)  
 
 I designed this to work with my system:  
-Outback VFXR3648A  
+Outback VFXR3648A (2)  
 Outback Mate3  
-Outback Legacy 10-Hub  
-Outback MX60 Charge Controller  
+Outback HUB10.3  
+Outback MX80 Charge Controller  
 
-You will likely have to adjust some of the code to work with your system. With only a few minor code changes this dashboard will work with your system.
+You might have to adjust some of the code to work with your system. With only a few minor code changes this dashboard should work with your system.  
 
-I designed this to use Google Charts to plot the historical data which is stored in a MSSQL database.
+I designed this to use Google Charts to plot the historical data which is captured every second and stored in an "NEDB" database which is native nodejs db engine. NEDB stores data in a file on the local disk.  
 
-Create your table as follows:
-
---------------------------------------------------------------------------------------------
-```
-USE [weavverdb]
-GO
-
-/****** Object:  Table [dbo].[Sensors_Data]    Script Date: 10/13/2015 11:38:01 PM ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-SET ANSI_PADDING ON
-GO
-
-CREATE TABLE [dbo].[Sensors_Data](
-	[Id] [uniqueidentifier] NOT NULL,
-	[OrganizationId] [uniqueidentifier] NOT NULL,
-	[SensorId] [varchar](75) NOT NULL,
-	[Value] [decimal](10, 5) NOT NULL,
-	[RecordedAt] [datetime] NOT NULL
-) ON [PRIMARY]
-
-GO
-
-SET ANSI_PADDING OFF
-GO
-```
---------------------------------------------------------------------------------------------
+Get started by copying the config.sample.js to config.js and tune appropriately then run "node app.js" and you should be in business.  
