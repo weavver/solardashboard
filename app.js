@@ -156,17 +156,17 @@ function pushMessages() {
      });
 }
 
-function getHistory(sensorId, callback) {
-     console.log('loading history for sensor: ' + sensorId);
+function getHistory(task, callback) {
+     console.log('loading history for sensor: ' + task.sensorId);
 
      var searchDateObj = new Date();
-     searchDateObj.setHours(searchDateObj.getHours() - 24);
+     searchDateObj.setHours(searchDateObj.getHours() - 12);
      global.nedb
           .find({
-                    sensorId: sensorId,
+                    sensorId: task.sensorId,
                     timestamp_unix: { $gt: searchDateObj.getTime() }
           })
-          .sort({ timestamp_unix: -1})
+          .sort({ timestamp_unix: 1})
           .exec(function (err, docs) {
                //console.log('found ' + docs.length + ' matching docs');
 
@@ -178,7 +178,7 @@ function getHistory(sensorId, callback) {
                var lastItemCount = 0;
                var aggregateValSum = null;
                var itemCount = 0;
-               docs.reverse().forEach(function (element, index, array) {
+               docs.forEach(function (element, index, array) {
                     var itemDateTime = new Date(element.timestamp_unix);
                     var itemHour = itemDateTime.getHours();
                     var itemMinute = itemDateTime.getMinutes();
@@ -189,9 +189,9 @@ function getHistory(sensorId, callback) {
 
                     aggregateValSum += element.value;
 
-                    if (itemMinute > lastItemMinute || index == docs.length - 1) {
+                    if (itemHour != lastItemHour || itemMinute != lastItemMinute || index == docs.length - 1) {
                          var average = aggregateValSum / itemCount;
-                         average = Math.round(average);
+                         average = +(Math.round(average + ("e+" + task.precision)) + ("e-" + task.precision));
 
                          var copiedDateTime = new Date(itemDateTime.getTime());
                          copiedDateTime.setSeconds(0, 0);
@@ -214,11 +214,12 @@ function getHistory(sensorId, callback) {
 
                     redval += element.value;
 
+                    lastItemHour = itemHour;
                     lastItemMinute = itemMinute;
                });
 
                //console.log('reduced to ' + reducedDocs.length + ' documents');
-               global.result[sensorId] = reducedDocs;
+               global.result[task.sensorId] = reducedDocs;
                callback();
           });
 
@@ -267,15 +268,16 @@ function getHistory(sensorId, callback) {
 }
 
 var q = global.async.queue(function (task, callback) {
-     getHistory(task.sensorId, callback);
+     getHistory(task, callback);
 }, 1);
 
 function loadHistory() {
-     q.push({sensorId: 'outback_watts'});
-     q.push({sensorId: 'outback_sys_batt_v'});
-     q.push({sensorId: 'outback_gen_charge_watts'});
-     q.push({sensorId: 'outback_pv_watts'});
-     q.push({sensorId: 'outback_sys_soc'});
+     q.push({sensorId: 'outback_watts', precision: 0});
+     q.push({sensorId: 'outback_sys_batt_v', precision: 0});
+     q.push({sensorId: 'outback_gen_charge_watts', precision: 0});
+     q.push({sensorId: 'outback_pv_watts', precision: 0});
+     q.push({sensorId: 'outback_sys_soc', precision: 0});
+     q.push({sensorId: 'outback_kwh_net', precision: 2});
 }
 
 function pollMate3(recordData) {
@@ -288,8 +290,9 @@ function pollMate3(recordData) {
           if (response.body && response.body.devstatus && response.body.devstatus.ports && response.body.devstatus.ports.length > 2) {
                global.result.outback_data = response.body;
 
-              var charge_watts = null;
-              var consumption_watts = null;
+               var charge_watts = null;
+               var consumption_watts = null;
+               var pv_kwh = 0;
                response.body.devstatus.ports.forEach(function (device, key, array) {
                    if (device.Dev == 'FXR') {
                        var inv = device;
@@ -301,14 +304,17 @@ function pollMate3(recordData) {
                        var cc = device;
                        if (typeof cc !== 'undefined' && typeof cc.Out_I !== 'undefined' && typeof cc.Batt_V !== 'undefined') {
                            var a = cc.Out_I * cc.Batt_V;
-                           global.result.outback_data.pv_in = Math.round(a / 10) * 10;
+                           global.result.outback_data.pv_watts = Math.round(a / 10) * 10;
+                           pv_kwh += cc.Out_kWh;
                        }
                    }
                    if (device.Dev == 'FNDC') {
                         global.result.outback_data.soc = device.SOC;
+                        global.result.outback_data.kwh_net = device.Net_CFC_kWh;
                    }
                });
 
+               global.result.outback_data.pv_kwh = pv_kwh;
                global.result.outback_data.inv_in = charge_watts;
                global.result.outback_data.inv_out = consumption_watts;
 
@@ -321,11 +327,12 @@ function pollMate3(recordData) {
 }
 
 function logData() {
-     LogDataPoint('outback_pv_watts', global.result.outback_data.pv_in);
+     LogDataPoint('outback_pv_watts', global.result.outback_data.pv_watts);
      LogDataPoint('outback_watts', global.result.outback_data.inv_out);
      LogDataPoint('outback_gen_charge_watts', global.result.outback_data.inv_in);
      LogDataPoint('outback_sys_batt_v', global.result.outback_data.devstatus.Sys_Batt_V);
      LogDataPoint('outback_sys_soc', global.result.outback_data.soc);
+     LogDataPoint('outback_kwh_net', global.result.outback_data.kwh_net);
 }
 
 function LogDataPoint(sensorId, sensorValue) {

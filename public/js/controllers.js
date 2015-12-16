@@ -14,15 +14,18 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
             gauges['voltage'].redraw($scope.outback_data.Sys_Batt_V, "v");
             gauges['kwh_in'].redraw($scope.outback_data.ports[3].In_kWh_today, "kWh");
             gauges['kwh_out'].redraw($scope.outback_data.ports[3].Out_kWh_today, "kWh");
+            gauges['kwh_net'].redraw($scope.outback_data.ports[3].Net_CFC_kWh, "kWh");
             gauges['consumption_watts'].redraw($scope.data.outback_data.inv_out, "w");
-            gauges['pv_in'].redraw($scope.data.outback_data.pv_in, "w");
+            gauges['pv_watts'].redraw($scope.data.outback_data.pv_watts, "w");
+            gauges['pv_kwh'].redraw($scope.data.outback_data.pv_kwh, "kWh");
             gauges['inv_in'].redraw($scope.data.outback_data.inv_in, "w");
 
             drawChart('watts_chart', 'Solar System - Watts', 'Watts', response.data.outback_watts);
             drawChart('voltage_chart', 'Solar System - Voltage', 'Voltage', response.data.outback_sys_batt_v);
             drawChart('generator_chart', 'Solar System - Generator Charge', 'Watts', response.data.outback_gen_charge_watts);
-            drawChart('solar_chart', 'Solar System - Solar', 'Watts', response.data.outback_pv_watts);
+            drawChart('solar_chart', 'Solar System - Solar Watts', 'Watts', response.data.outback_pv_watts);
             drawChart('soc_chart', 'Solar System - SOC', '%', response.data.outback_sys_soc);
+            drawChart('kwh_net_chart', 'Solar System - KWH Net', 'kWh', response.data.outback_kwh_net);
         });
     }
 

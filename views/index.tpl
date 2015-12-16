@@ -39,10 +39,12 @@
           function createGauges() {
                createGauge("soc", "SOC", 0, 100);
                createGauge("voltage", "Voltage", 0, 60);
-               createGauge("kwh_in", "kWh In", 0, 60);
-               createGauge("kwh_out", "kWh Out", 0, 60);
+               createGauge("kwh_in", "+kWh Today", 0, 40);
+               createGauge("kwh_out", "-kWh Today", 0, 40);
+               createGauge("kwh_net", "kWh Net", -20, 20);
                createGauge("consumption_watts", "Watts", 0, 5000);
-               createGauge("pv_in", "Solar", 0, 2000);
+               createGauge("pv_watts", "Solar Watts", 0, 2000);
+               createGauge("pv_kwh", "Solar kWh", 0, 40);
                createGauge("inv_in", "Charge", 0, 5000);
           }
 
@@ -87,8 +89,10 @@
                <div class="col-xs-1 col-md-1"><span id="voltage"></span></div>
                <div class="col-xs-1 col-md-1"><span id="kwh_in"></span></div>
                <div class="col-xs-1 col-md-1"><span id="kwh_out"></span></div>
+               <div class="col-xs-1 col-md-1"><span id="kwh_net"></span></div>
                <div class="col-xs-1 col-md-1"><span id="consumption_watts"></span></div>
-               <div class="col-xs-1 col-md-1"><span id="pv_in"></span></div>
+               <div class="col-xs-1 col-md-1"><span id="pv_watts"></span></div>
+               <div class="col-xs-1 col-md-1"><span id="pv_kwh"></span></div>
                <div class="col-xs-1 col-md-1"><span id="inv_in"></span></div>
           </div>
      </div>
@@ -103,6 +107,7 @@
                     <div id="generator_chart" class="chart"></div>
                     <div id="solar_chart" class="chart"></div>
                     <div id="soc_chart" class="chart"></div>
+                    <div id="kwh_net_chart" class="chart"></div>
                </div>
           </div>
      </div>
