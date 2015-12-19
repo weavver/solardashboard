@@ -19,17 +19,24 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
             gauges['pv_watts'].redraw($scope.data.outback_data.pv_watts, "w");
             gauges['pv_kwh'].redraw($scope.data.outback_data.pv_kwh, "kWh");
             gauges['inv_in'].redraw($scope.data.outback_data.inv_in, "w");
-
-            drawChart('watts_chart', 'Solar System - Watts', 'Watts', response.data.outback_watts);
-            drawChart('voltage_chart', 'Solar System - Voltage', 'Voltage', response.data.outback_sys_batt_v);
-            drawChart('generator_chart', 'Solar System - Generator Charge', 'Watts', response.data.outback_gen_charge_watts);
-            drawChart('solar_chart', 'Solar System - Solar Watts', 'Watts', response.data.outback_pv_watts);
-            drawChart('soc_chart', 'Solar System - SOC', '%', response.data.outback_sys_soc);
-            drawChart('kwh_net_chart', 'Solar System - KWH Net', 'kWh', response.data.outback_kwh_net);
         });
     }
 
-    function drawChart(chartId, title, label, data_history) {
+
+     $scope.updateDataHistory = function () {
+          $http.get('/data_history').then(function (response) {
+               drawChart('watts_chart', 'Solar System - Watts', 'Watts', response.data.outback_watts);
+               drawChart('voltage_chart', 'Solar System - Voltage', 'Voltage', response.data.outback_sys_batt_v);
+               drawChart('generator_chart', 'Solar System - Generator Charge', 'Watts', response.data.outback_gen_charge_watts);
+               drawChart('solar_chart', 'Solar System - Solar Watts', 'Watts', response.data.outback_pv_watts);
+               drawChart('soc_chart', 'Solar System - SOC', '%', response.data.outback_sys_soc);
+               drawChart('kwh_in_chart', 'Solar System - kWh In', 'kWh', response.data.outback_kwh_in);
+               drawChart('kwh_out_chart', 'Solar System - kWh Out', 'kWh', response.data.outback_kwh_out);
+               drawChart('kwh_net_chart', 'Solar System - kWh Net', 'kWh', response.data.outback_kwh_net);
+          });
+     };
+
+     function drawChart(chartId, title, label, data_history) {
           if (!data_history) {
                console.log('there is no data history for this chart: ' + chartId);
                return;
@@ -93,6 +100,8 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
         });
     }
 
-    $interval($scope.updateData, 10000);
+    $interval($scope.updateData, 5000);
+    $interval($scope.updateDataHistory, 30000);
     $scope.updateData();
+    $scope.updateDataHistory();
 });

@@ -11,7 +11,8 @@ catch (e) { }
 
 var global = {};
 
-global.result = {};
+global.data = {};
+global.data_history = {};
 global.tpl_data = { extra_scripts: 'no script' };
 global.config = require('./config');
 global.async = require('async');
@@ -59,7 +60,11 @@ global.app.get('/', function (req, res) {
 });
 
 global.app.get('/data', function (req, res) {
-     res.send(global.result);
+     res.send(global.data);
+});
+
+global.app.get('/data_history', function (req, res) {
+     res.send(global.data_history);
 });
 
 global.app.get('/data_log', function (req, res) {
@@ -160,13 +165,13 @@ function getHistory(task, callback) {
      console.log('loading history for sensor: ' + task.sensorId);
 
      var searchDateObj = new Date();
-     searchDateObj.setHours(searchDateObj.getHours() - 12);
+     searchDateObj.setHours(searchDateObj.getHours() - 16);
      global.nedb
           .find({
                     sensorId: task.sensorId,
                     timestamp_unix: { $gt: searchDateObj.getTime() }
           })
-          .sort({ timestamp_unix: 1})
+          .sort({ timestamp_unix: 12})
           .exec(function (err, docs) {
                //console.log('found ' + docs.length + ' matching docs');
 
@@ -174,7 +179,7 @@ function getHistory(task, callback) {
                var count = 0;
                var redval = 0;
                var lastItemHour = null;
-               var lastItemMinute = 0;
+               var lastItemMinute = -1;
                var lastItemCount = 0;
                var aggregateValSum = null;
                var itemCount = 0;
@@ -184,7 +189,7 @@ function getHistory(task, callback) {
                     var itemMinute = itemDateTime.getMinutes();
                     var itemSecond = itemDateTime.getSeconds();
 
-                    if (lastItemMinute == 0)
+                    if (lastItemMinute == -1)
                          lastItemMinute = itemMinute;
 
                     aggregateValSum += element.value;
@@ -219,7 +224,7 @@ function getHistory(task, callback) {
                });
 
                //console.log('reduced to ' + reducedDocs.length + ' documents');
-               global.result[task.sensorId] = reducedDocs;
+               global.data_history[task.sensorId] = reducedDocs;
                callback();
           });
 
@@ -273,22 +278,24 @@ var q = global.async.queue(function (task, callback) {
 
 function loadHistory() {
      q.push({sensorId: 'outback_watts', precision: 0});
-     q.push({sensorId: 'outback_sys_batt_v', precision: 0});
+     q.push({sensorId: 'outback_sys_batt_v', precision: 1});
      q.push({sensorId: 'outback_gen_charge_watts', precision: 0});
      q.push({sensorId: 'outback_pv_watts', precision: 0});
      q.push({sensorId: 'outback_sys_soc', precision: 0});
+     q.push({sensorId: 'outback_kwh_in', precision: 2});
+     q.push({sensorId: 'outback_kwh_out', precision: 2});
      q.push({sensorId: 'outback_kwh_net', precision: 2});
 }
 
 function pollMate3(recordData) {
      global.needle.get(global.config.outbackUrl, function (error, response) {
           if (error) {
-               global.result.outback_data = { 'status': 'error trying to get data from the mate3' };
+               global.data.outback_data = { 'status': 'error trying to get data from the mate3' };
                return;
           }
 
           if (response.body && response.body.devstatus && response.body.devstatus.ports && response.body.devstatus.ports.length > 2) {
-               global.result.outback_data = response.body;
+               global.data.outback_data = response.body;
 
                var charge_watts = null;
                var consumption_watts = null;
@@ -304,35 +311,37 @@ function pollMate3(recordData) {
                        var cc = device;
                        if (typeof cc !== 'undefined' && typeof cc.Out_I !== 'undefined' && typeof cc.Batt_V !== 'undefined') {
                            var a = cc.Out_I * cc.Batt_V;
-                           global.result.outback_data.pv_watts = Math.round(a / 10) * 10;
+                           global.data.outback_data.pv_watts = Math.round(a / 10) * 10;
                            pv_kwh += cc.Out_kWh;
                        }
                    }
                    if (device.Dev == 'FNDC') {
-                        global.result.outback_data.soc = device.SOC;
-                        global.result.outback_data.kwh_net = device.Net_CFC_kWh;
+                        global.data.outback_data.soc = device.SOC;
+                        global.data.outback_data.kwh_net = device.Net_CFC_kWh;
                    }
                });
 
-               global.result.outback_data.pv_kwh = pv_kwh;
-               global.result.outback_data.inv_in = charge_watts;
-               global.result.outback_data.inv_out = consumption_watts;
+               global.data.outback_data.pv_kwh = pv_kwh;
+               global.data.outback_data.inv_in = charge_watts;
+               global.data.outback_data.inv_out = consumption_watts;
 
                if (recordData)
                     logData();
           } else {
-               global.result.outback_data = { 'status': 'error reading the response from the mate3' };
+               global.data.outback_data = { 'status': 'error reading the response from the mate3' };
           }
      });
 }
 
 function logData() {
-     LogDataPoint('outback_pv_watts', global.result.outback_data.pv_watts);
-     LogDataPoint('outback_watts', global.result.outback_data.inv_out);
-     LogDataPoint('outback_gen_charge_watts', global.result.outback_data.inv_in);
-     LogDataPoint('outback_sys_batt_v', global.result.outback_data.devstatus.Sys_Batt_V);
-     LogDataPoint('outback_sys_soc', global.result.outback_data.soc);
-     LogDataPoint('outback_kwh_net', global.result.outback_data.kwh_net);
+     LogDataPoint('outback_pv_watts', global.data.outback_data.pv_watts);
+     LogDataPoint('outback_watts', global.data.outback_data.inv_out);
+     LogDataPoint('outback_gen_charge_watts', global.data.outback_data.inv_in);
+     LogDataPoint('outback_sys_batt_v', global.data.outback_data.devstatus.Sys_Batt_V);
+     LogDataPoint('outback_sys_soc', global.data.outback_data.soc);
+     LogDataPoint('outback_kwh_in', global.data.outback_data.devstatus.ports[3].In_kWh_today);
+     LogDataPoint('outback_kwh_out', global.data.outback_data.devstatus.ports[3].Out_kWh_today);
+     LogDataPoint('outback_kwh_net', global.data.outback_data.kwh_net);
 }
 
 function LogDataPoint(sensorId, sensorValue) {

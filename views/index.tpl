@@ -107,6 +107,8 @@
                     <div id="generator_chart" class="chart"></div>
                     <div id="solar_chart" class="chart"></div>
                     <div id="soc_chart" class="chart"></div>
+                    <div id="kwh_in_chart" class="chart"></div>
+                    <div id="kwh_out_chart" class="chart"></div>
                     <div id="kwh_net_chart" class="chart"></div>
                </div>
           </div>
