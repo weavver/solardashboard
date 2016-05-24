@@ -2,26 +2,110 @@ var DashboardApp = angular.module('DashboardApp', ['ui.bootstrap']);
 
 DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $templateRequest, $http, $interval) {
 
-    $scope.updateData = function () {
-        $http.get('/data').then(function (response) {
-            //console.log(response);
 
-            $scope.data = response.data;
+     var gauges = [];
+     $scope.assertGauge = function(name, label, min, max, val, suffix) {
+          $('#GaugeLayer').append('<div class="col-xs-1 col-md-1"><span id="' + name + '"></span></div>');
 
-            $scope.outback_data = response.data.outback_data.devstatus;
+          if (gauges[name] == undefined) {
+               var config =
+               {
+                    size: 150,
+                    label: label,
+                    min: undefined != min ? min : 0,
+                    max: undefined != max ? max : 100,
+                    minorTicks: 5
+               };
+               var range = config.max - config.min;
+               config.yellowZones = [{from: config.min + range * 0.75, to: config.min + range * 0.9}];
+               config.redZones = [{from: config.min + range * 0.9, to: config.max}];
+               gauges[name] = new Gauge(name, config);
+               gauges[name].render();
+          }
+          gauges[name].redraw(val, suffix);
+     };
 
-            gauges['soc'].redraw($scope.outback_data.ports[3].SOC, "%");
-            gauges['voltage'].redraw($scope.outback_data.Sys_Batt_V, "v");
-            gauges['kwh_in'].redraw($scope.outback_data.ports[3].In_kWh_today, "kWh");
-            gauges['kwh_out'].redraw($scope.outback_data.ports[3].Out_kWh_today, "kWh");
-            gauges['kwh_net'].redraw($scope.outback_data.ports[3].Net_CFC_kWh, "kWh");
-            gauges['consumption_watts'].redraw($scope.data.outback_data.inv_out, "w");
-            gauges['pv_watts'].redraw($scope.data.outback_data.pv_watts, "w");
-            gauges['pv_kwh'].redraw($scope.data.outback_data.pv_kwh, "kWh");
-            gauges['inv_in'].redraw($scope.data.outback_data.inv_in, "w");
-        });
-    }
+     //function getRandomValue(gauge) {
+     //     var overflow = 0; //10;
+     //     return gauge.config.min - overflow + (gauge.config.max - gauge.config.min + overflow * 2) * Math.random();
+     //}
 
+
+     $scope.updateData = function () {
+          $http.get('/data').then(function (response) {
+               console.log(response.data);
+
+               // auto reloads the browser window after a code change and nodejs is reloaded
+               if ($scope.data != undefined &&
+                    $scope.data.boot_date != undefined &&
+                    response.data != undefined &&
+                    response.data.boot_date != undefined &&
+                    $scope.data.boot_date != response.data.boot_date)
+                    window.location.reload(false);
+
+               $scope.data = response.data;
+
+               if (response.data.outback_data == undefined ||
+                    response.data.outback_data.devstatus == undefined ||
+                    response.data.outback_data.devstatus.ports == undefined)
+                    return;
+
+               $scope.outback_data = response.data.outback_data.devstatus;
+
+               var total_fxr_watts_sell = 0;
+               var total_fxr_watts_buy = 0;
+               var total_cc_watts_in = 0;
+               var total_cc_kwh = 0;
+
+               $scope.outback_data.ports.forEach(function (item) {
+                    var gauge_id = 'gauge-' + item.Port;
+                    var gauge_name = item.Dev;
+                    if (item.Type != undefined)
+                         gauge_name += '-' + item.Type;
+
+                         switch (item.Dev) {
+                              case "FXR":
+                                   var inv = item;
+                                   item.watts_sell = (inv.Inv_I_L2 * inv.VAC_out_L2) + ((inv.Buy_I_L2 * inv.VAC_out_L2) - (inv.Chg_I_L2 * inv.VAC1_in_L2));
+                                   item.watts_buy  = (inv.Buy_I_L2 * inv.VAC1_in_L2);
+
+                                   total_fxr_watts_sell += item.watts_sell;
+                                   total_fxr_watts_buy += item.watts_buy;
+
+                                   $scope.assertGauge(gauge_id + '-inv_sell', gauge_name, 0, 4000, item.watts_sell, 'w sell');
+                                   $scope.assertGauge(gauge_id + '-inv_buy', gauge_name, 0, 3000, item.watts_buy, 'w buy');
+                                   $scope.assertGauge(gauge_id + '-inv_v', gauge_name, 0, 60, item.Batt_V, 'v');
+                                   break;
+
+                              case "CC":
+                                   var a = item.Out_I * item.Batt_V;
+                                   var cc_watts = Math.round(a / 10) * 10;
+                                   total_cc_watts_in += cc_watts;
+                                   total_cc_kwh += item.Out_kWh;
+
+                                   $scope.assertGauge(gauge_id + '-cc_watts', gauge_name, 0, 4000, cc_watts, 'w');
+                                   $scope.assertGauge(gauge_id + '-kwh_in', gauge_name, 0, 40, item.Out_kWh, ' kWh');
+                                   break;
+
+                              case "FNDC":
+                                   $scope.assertGauge(gauge_id + '-soc', gauge_name, 0, 100, item.SOC, '%');
+                                   $scope.assertGauge(gauge_id + '-v', gauge_name, 0, 60, item.Batt_V, 'v');
+                                   $scope.assertGauge(gauge_id + '-in_kwh', gauge_name, 0, 50, item.In_kWh_today, ' kWh In');
+                                   $scope.assertGauge(gauge_id + '-out_kwh', gauge_name, 0, 50, item.Out_kWh_today, ' kWh Out');
+                                   break;
+                         }
+               });
+
+               $scope.assertGauge('total_cc_watts_in', 'CC Total', 0, 4500, total_cc_watts_in, 'w');
+               $scope.assertGauge('total_cc_kwh', 'CC Total', 0, 4500, total_cc_kwh, 'kWh');
+
+               $scope.assertGauge('total_fxr_watts_buy', 'Total FXR In', 0, 8000, total_fxr_watts_buy, 'w');
+               $scope.assertGauge('total_fxr_watts_sell', 'Total FXR Out', 0, 3000, total_fxr_watts_sell, 'w');
+
+               $scope.assertGauge('total_watts_in', 'Total In', 0, 6000, total_fxr_watts_buy + total_cc_watts_in, 'w');
+               $scope.assertGauge('total_watts_out', 'Total Out', 0, 12000, total_fxr_watts_sell, 'w');
+          });
+     };
 
      $scope.updateDataHistory = function () {
           $http.get('/data_history').then(function (response) {
@@ -101,7 +185,7 @@ DashboardApp.controller('DashboardData', function ($scope, $sce, $compile, $temp
     }
 
     $interval($scope.updateData, 5000);
-    $interval($scope.updateDataHistory, 30000);
+    //$interval($scope.updateDataHistory, 30000);
     $scope.updateData();
-    $scope.updateDataHistory();
+    //$scope.updateDataHistory();
 });

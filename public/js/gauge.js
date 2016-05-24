@@ -62,7 +62,7 @@
         }
         
         if (undefined != this.config.label) {
-            var fontSize = Math.round(this.config.size / 9);
+            var fontSize = Math.round(this.config.size / 11);
             this.body.append("svg:text")
 						.attr("x", this.config.cx)
 						.attr("y", this.config.cy / 2 + fontSize / 2)
@@ -74,7 +74,7 @@
 						.style("stroke-width", "0px");
         }
         
-        var fontSize = Math.round(this.config.size / 16);
+        var fontSize = Math.round(this.config.size / 11);
         var majorDelta = this.config.range / (this.config.majorTicks - 1);
         for (var major = this.config.min; major <= this.config.max; major += majorDelta) {
             var minorDelta = majorDelta / this.config.minorTicks;
@@ -108,7 +108,7 @@
                 this.body.append("svg:text")
 				 			.attr("x", point.x)
 				 			.attr("y", point.y)
-				 			.attr("dy", fontSize / 3)
+				 			.attr("dy", fontSize / 2)
 				 			.attr("text-anchor", major == this.config.min ? "start" : "end")
 				 			.text(major)
 				 			.style("font-size", fontSize + "px")
@@ -122,12 +122,12 @@
         var midValue = (this.config.min + this.config.max) / 2;
         
         var pointerPath = this.buildPointerPath(midValue);
-        
+
         var pointerLine = d3.svg.line()
 									.x(function (d) { return d.x })
 									.y(function (d) { return d.y })
 									.interpolate("basis");
-        
+
         pointerContainer.selectAll("path")
 							.data([pointerPath])
 							.enter()
@@ -145,13 +145,13 @@
 							.style("stroke", "#666")
 							.style("opacity", 1);
         
-        var fontSize = Math.round(this.config.size / 10);
+        var fontSize = Math.round(this.config.size / 11);
         pointerContainer.selectAll("text")
 							.data([midValue])
 							.enter()
 								.append("svg:text")
 									.attr("x", this.config.cx)
-									.attr("y", this.config.size - this.config.cy / 4 - fontSize)
+									.attr("y", this.config.size - this.config.cy / 4 - fontSize + 4)
 									.attr("dy", fontSize / 2)
 									.attr("text-anchor", "middle")
 									.style("font-size", fontSize + "px")
