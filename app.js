@@ -27,10 +27,10 @@ global.path = require('path');
 global.MongoClient = require('mongodb').MongoClient;
 
 global.express.static.mime.define({ 'text/css': ['css'] });
-
+var basicAuth = require('basic-auth-connect');
 global.outback = require('./vendors/outback.js').init(global);
 
-global.app.use(global.express.static('public'));
+global.app.use(global.express.static('public'),basicAuth('user1', 'pass1'));
 global.app.use('/bower_components', global.express.static('bower_components'));
 
 var server = global.app.listen(80, function () {
